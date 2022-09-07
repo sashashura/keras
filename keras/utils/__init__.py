@@ -18,6 +18,9 @@
 # Audio related
 from keras.utils.audio_dataset import audio_dataset_from_directory
 
+# Evaluation related
+from keras.utils.sidecar_evaluator import SidecarEvaluator
+
 # Sequence related
 from keras.utils.data_utils import GeneratorEnqueuer
 from keras.utils.data_utils import OrderedEnqueuer
