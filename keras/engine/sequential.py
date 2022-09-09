@@ -457,7 +457,7 @@ class Sequential(functional.Functional):
         config = training.Model.get_config(self)
         config["name"] = self.name
         config["layers"] = copy.deepcopy(layer_configs)
-        if not self._is_graph_network and self._build_input_shape is not None:
+        if self.built:
             config["build_input_shape"] = self._build_input_shape
         return config
 
@@ -514,12 +514,18 @@ class Sequential(functional.Functional):
                 # TODO(rchao): Handle other compile args.
                 model.compile(optimizer=optimizer, loss=loss)
 
-        if (
-            not model.inputs
-            and build_input_shape
-            and isinstance(build_input_shape, (tuple, list))
-        ):
-            model.build(build_input_shape)
+            if build_input_shape:
+                model.build(build_input_shape)
+                if model.optimizer is not None:
+                    model.optimizer.build(model.trainable_variables)
+
+        else:
+            if (
+                not model.inputs
+                and build_input_shape
+                and isinstance(build_input_shape, (tuple, list))
+            ):
+                model.build(build_input_shape)
 
         return model
 

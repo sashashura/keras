@@ -3081,7 +3081,7 @@ class Model(base_layer.Layer, version_utils.ModelVersionSelector):
                     self.compiled_loss
                 )
             if self.built:
-                config["input_shape"] = self._build_input_shape
+                config["build_input_shape"] = self._build_input_shape
 
         return config
 
@@ -3102,7 +3102,7 @@ class Model(base_layer.Layer, version_utils.ModelVersionSelector):
             loss = saving_lib.deserialize_keras_object(
                 loss_dict, custom_objects
             )
-        input_shape = config.pop("input_shape", {})
+        input_shape = config.pop("build_input_shape", {})
 
         # `from_config` assumes `cls` is either `Functional` or a child class of
         # `Functional`. In the case that `cls` is meant to behave like a child
@@ -3170,6 +3170,8 @@ class Model(base_layer.Layer, version_utils.ModelVersionSelector):
 
                 if input_shape:
                     model.build(input_shape)
+                    if model.optimizer is not None:
+                        model.optimizer.build(model.trainable_variables)
 
             return model
 
