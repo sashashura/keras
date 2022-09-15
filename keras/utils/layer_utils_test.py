@@ -23,6 +23,8 @@ import shutil
 import sys
 import time
 import timeit
+import io
+import tempfile
 
 import numpy as np
 import tensorflow.compat.v2 as tf
@@ -592,6 +594,74 @@ class LayerUtilsTest(tf.test.TestCase):
         size_check_instance = MyPickleableObject()
         _ = size_check_instance.my_id
         self.assertEqual(expected_size, len(pickle.dumps(size_check_instance)))
+
+
+class VocabInfoTest(tf.test.TestCase):
+    def test_loading_vocab_info_config(self):
+        vocab_old = ["unk", "a", "b", "c"]
+        vocab_new = ["unk", "unk", "a", "b", "c", "d", "e"]
+        vocab_info = layer_utils.vocab_info(
+            old_vocab=vocab_old,
+            old_vocab_size=len(vocab_old),
+            new_vocab=vocab_new,
+            new_vocab_size=len(vocab_new),
+            num_oov_indices=2,
+        )
+        # test getters
+        self.assertEqual(vocab_info.old_vocab, vocab_old)
+        self.assertEqual(vocab_info.new_vocab, vocab_new)
+        self.assertEqual(vocab_info.old_vocab_size, 4)
+        self.assertEqual(vocab_info.new_vocab_size, 7)
+        self.assertEqual(vocab_info.num_oov_indices, 2)
+
+    def test_voocab_info_setters(self):
+        vocab_old = ["UNK", "a", "b", "c"]
+        vocab_new = ["UNK", "UNK", "a", "b", "c", "d", "e"]
+        vocab_info = layer_utils.vocab_info(
+            old_vocab=vocab_old,
+            old_vocab_size=len(vocab_old),
+            new_vocab=vocab_new,
+            new_vocab_size=len(vocab_new),
+            num_oov_indices=2,
+        )
+        updated_vocab_old = ["UNK", "l", "m", "n", "o"]
+        updated_vocab_new = ["UNK", "z", "j", "o", "k", "e", "r"]
+        vocab_info.old_vocab = updated_vocab_old
+        vocab_info.new_vocab = updated_vocab_new
+        vocab_info.old_vocab_size = 5
+        vocab_info.new_vocab_size = 8
+        vocab_info.num_oov_indices = 1
+        self.assertEqual(vocab_info.old_vocab, updated_vocab_old)
+        self.assertEqual(vocab_info.new_vocab, updated_vocab_new)
+        self.assertEqual(vocab_info.old_vocab_size, 5)
+        self.assertEqual(vocab_info.new_vocab_size, 8)
+        self.assertEqual(vocab_info.num_oov_indices, 1)
+
+    def test_with_file_name(self):
+        vocab_old = ["UNK", "a", "b", "c"]
+        vocab_old_file = tempfile.mktemp(".tsv")
+        VocabInfoTest._write_list_to_file(vocab_old_file, vocab_old)
+        vocab_new = ["UNK", "UNK", "a", "b", "c", "d", "e"]
+        vocab_new_file = tempfile.mktemp(".tsv")
+        VocabInfoTest._write_list_to_file(vocab_new_file, vocab_new)
+        vocab_info = layer_utils.vocab_info(
+            old_vocab=vocab_old_file,
+            old_vocab_size=len(vocab_old),
+            new_vocab=vocab_new_file,
+            new_vocab_size=len(vocab_new),
+            num_oov_indices=2,
+        )
+        self.assertEqual(vocab_info.old_vocab, vocab_old)
+        self.assertEqual(vocab_info.new_vocab, vocab_new)
+        self.assertEqual(vocab_info.old_vocab_size, 4)
+        self.assertEqual(vocab_info.new_vocab_size, 7)
+        self.assertEqual(vocab_info.num_oov_indices, 2)
+
+    def _write_list_to_file(filename, content_list):
+        output_file = io.open(filename, "w", encoding="utf-8")
+        for line in content_list:
+            output_file.write(line + "\n")
+        output_file.close()
 
 
 if __name__ == "__main__":

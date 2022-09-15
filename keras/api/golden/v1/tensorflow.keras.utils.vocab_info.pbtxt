@@ -1,0 +1,29 @@
+path: "tensorflow.keras.utils.vocab_info"
+tf_class {
+  is_instance: "<class \'keras.utils.layer_utils.vocab_info\'>"
+  is_instance: "<type \'object\'>"
+  member {
+    name: "new_vocab"
+    mtype: "<type \'property\'>"
+  }
+  member {
+    name: "new_vocab_size"
+    mtype: "<type \'property\'>"
+  }
+  member {
+    name: "num_oov_indices"
+    mtype: "<type \'property\'>"
+  }
+  member {
+    name: "old_vocab"
+    mtype: "<type \'property\'>"
+  }
+  member {
+    name: "old_vocab_size"
+    mtype: "<type \'property\'>"
+  }
+  member_method {
+    name: "__init__"
+    argspec: "args=[\'self\', \'old_vocab\', \'old_vocab_size\', \'new_vocab\', \'new_vocab_size\', \'num_oov_indices\'], varargs=None, keywords=None, defaults=None"
+  }
+}

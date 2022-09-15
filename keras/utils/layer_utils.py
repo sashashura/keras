@@ -19,6 +19,7 @@ import copy
 import functools
 import re
 import weakref
+import io
 
 import numpy as np
 import tensorflow.compat.v2 as tf
@@ -809,3 +810,153 @@ class CallFunctionSpec:
                 "The first argument to `Layer.call` must always be passed."
             )
         return inputs, args, kwargs
+
+
+@keras_export("keras.utils.vocab_info")
+class vocab_info:
+    """Vocabulary information for remapping embedding matrix.
+
+        Args:
+            old_vocab: [Required] Either an array or a string path to a text file. If passing an
+              array, can pass a 1D numpy array, tuple, list or 1D tensor containing
+              the vocbulary terms. If passing a file path, the file should contain
+              one line per term in the vocabulary
+            old_vocab_size: [Optional] An integer indicating how many entries of the
+              old vocabulary are used in new vocab
+            new_vocab: [Required] Either an array or a string path to a text file. If passing an
+              array, can pass a 1D numpy array, tuple, list or 1D tensor containing
+              the vocbulary terms. If passing a file path, the file should contain
+              one line per term in the vocabulary
+            new_vocab_size: [Optional] An integer indicating how many entries of the
+              new vocabulary will used in training
+            num_oov_indices: [Required] An integer indicating how many OOV buckets
+              are associated with new vocabulary
+        """
+    def __init__(
+        self,
+        old_vocab,
+        old_vocab_size,
+        new_vocab,
+        new_vocab_size,
+        num_oov_indices,
+    ):
+        if tf.is_tensor(old_vocab):
+            self._old_vocab = self._tensor_vocab_to_list(old_vocab)
+        elif isinstance(old_vocab, (np.ndarray, tuple)):
+            self._old_vocab = list(old_vocab)
+        elif isinstance(old_vocab, str):
+            if not tf.io.gfile.exists(old_vocab):
+                raise ValueError(f"Vocabulary file {old_vocab} does not exist.")
+            self._old_vocab = vocab_info._load_vocab_from_file(old_vocab)
+        elif isinstance(old_vocab, list):
+            self._old_vocab = old_vocab
+        else:
+            raise ValueError(
+                "old_vocab is expected to be either a numpy array, "
+                "list, 1D tensor or a string path. Instead type "
+                f"{type(old_vocab)} was received "
+            )
+
+        self._old_vocab_size = old_vocab_size
+        if tf.is_tensor(new_vocab):
+            self._new_vocab = self._tensor_vocab_to_list(new_vocab)
+        elif isinstance(new_vocab, (np.ndarray, tuple)):
+            self._new_vocab = list(new_vocab)
+        elif isinstance(new_vocab, str):
+            if not tf.io.gfile.exists(new_vocab):
+                raise ValueError(f"Vocabulary file {new_vocab} does not exist.")
+            self._new_vocab = vocab_info._load_vocab_from_file(new_vocab)
+        elif isinstance(new_vocab, list):
+            self._new_vocab = new_vocab
+        else:
+            raise ValueError(
+                "new_vocab is expected to be either a numpy array, "
+                "list, 1D tensor or a string path. Instead type "
+                f"{type(new_vocab)} was received "
+            )
+        self._new_vocab_size = new_vocab_size
+        self._num_oov_indices = num_oov_indices
+
+    @property
+    def old_vocab(self):
+        """Returns old_vocab list"""
+        return self._old_vocab
+
+    @property
+    def old_vocab_size(self):
+        """Returns old_vocab_size value"""
+        return self._old_vocab_size
+
+    @property
+    def new_vocab(self):
+        """Returns new_vocab list"""
+        return self._new_vocab
+
+    @property
+    def new_vocab_size(self):
+        """Returns new_vocab_size value"""
+        return self._new_vocab_size
+
+    @property
+    def num_oov_indices(self):
+        """Returns num_oov_indices value"""
+        return self._num_oov_indices
+
+    @old_vocab.setter
+    def old_vocab(self, old_vocab):
+        if tf.is_tensor(old_vocab):
+            self._old_vocab = self._tensor_vocab_to_list(old_vocab)
+        elif isinstance(old_vocab, (np.ndarray, tuple)):
+            self._old_vocab = list(old_vocab)
+        elif isinstance(old_vocab, str):
+            if not tf.io.gfile.exists(old_vocab):
+                raise ValueError(f"Vocabulary file {old_vocab} does not exist.")
+            self._old_vocab = vocab_info._load_vocab_from_file(old_vocab)
+        elif isinstance(old_vocab, list):
+            self._old_vocab = old_vocab
+        else:
+            raise ValueError(
+                "old_vocab is expected to be either a numpy array, "
+                "list, 1D tensor or a string path. Instead type "
+                f"{type(old_vocab)} was received "
+            )
+
+    @old_vocab_size.setter
+    def old_vocab_size(self, old_vocab_size):
+        self._old_vocab_size = old_vocab_size
+
+    @new_vocab.setter
+    def new_vocab(self, new_vocab):
+        if tf.is_tensor(new_vocab):
+            self._new_vocab = self._tensor_vocab_to_list(new_vocab)
+        elif isinstance(new_vocab, (np.ndarray, tuple)):
+            self._new_vocab = list(new_vocab)
+        elif isinstance(new_vocab, str):
+            if not tf.io.gfile.exists(new_vocab):
+                raise ValueError(f"Vocabulary file {new_vocab} does not exist.")
+            self._new_vocab = vocab_info._load_vocab_from_file(new_vocab)
+        elif isinstance(new_vocab, list):
+            self._new_vocab = new_vocab
+        else:
+            raise ValueError(
+                "new_vocab is expected to be either a numpy array, "
+                "list, 1D tensor or a string path. Instead type "
+                f"{type(new_vocab)} was received "
+            )
+
+    @new_vocab_size.setter
+    def new_vocab_size(self, new_vocab_size):
+        self._new_vocab_size = new_vocab_size
+
+    @num_oov_indices.setter
+    def num_oov_indices(self, num_oov_indices):
+        self._num_oov_indices = num_oov_indices
+
+    def _tensor_vocab_to_list(vocabulary):
+        return list(vocabulary.numpy())
+
+    def _load_vocab_from_file(vocabulary_file_name):
+        vocabulary_file = io.open(vocabulary_file_name, "r")
+        vocabulary_list = vocabulary_file.read().splitlines()
+        vocabulary_file.close()
+        return vocabulary_list
